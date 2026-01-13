@@ -19,8 +19,7 @@ import {
 } from '@/utils/logic';
 
 function AppContent() {
-  const { loading, error, metrics, derivedSorted, addTask, updateTask, deleteTask, undoDelete, lastDeleted } = useTasksContext();
-  const handleCloseUndo = () => {};
+  const { loading, error, metrics, derivedSorted, addTask, updateTask, deleteTask, undoDelete, lastDeleted, clearLastDeleted } = useTasksContext();
   const [q, setQ] = useState('');
   const [fStatus, setFStatus] = useState<string>('All');
   const [fPriority, setFPriority] = useState<string>('All');
@@ -54,6 +53,12 @@ function AppContent() {
     deleteTask(id);
     setActivity(prev => [createActivity('delete', `Deleted task ${id}`), ...prev].slice(0, 50));
   }, [deleteTask, createActivity]);
+  const handleCloseUndo = useCallback((event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    clearLastDeleted(); // This should properly clear the state
+  }, [clearLastDeleted]);
   const handleUndo = useCallback(() => {
     undoDelete();
     setActivity(prev => [createActivity('undo', 'Undo delete'), ...prev].slice(0, 50));

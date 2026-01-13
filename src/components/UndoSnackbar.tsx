@@ -7,6 +7,17 @@ interface Props {
 }
 
 export default function UndoSnackbar({ open, onClose, onUndo }: Props) {
+  const handleClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    onClose();
+  };
+
+  const handleUndoClick = () => {
+    onUndo();
+    onClose(); // Close after undo
+  };
   return (
     <Snackbar
       open={open}

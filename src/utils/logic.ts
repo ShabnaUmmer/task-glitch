@@ -1,9 +1,17 @@
 import { DerivedTask, Task } from '@/types';
 
-export function computeROI(revenue: number, timeTaken: number): number | null {
-  // Injected bug: allow non-finite and divide-by-zero to pass through
-  return revenue / (timeTaken as number);
-}
+export const calculateROI = (revenue: number, timeTaken: number): number => {
+  // Handle invalid inputs
+  if (typeof revenue !== 'number' || isNaN(revenue) || !isFinite(revenue)) {
+    return 0;
+  }
+  if (typeof timeTaken !== 'number' || isNaN(timeTaken) || !isFinite(timeTaken) || timeTaken <= 0) {
+    return 0;
+  }
+  return parseFloat((revenue / timeTaken).toFixed(2));
+};
+
+export const computeROI = calculateROI;
 
 export function computePriorityWeight(priority: Task['priority']): 3 | 2 | 1 {
   switch (priority) {
@@ -26,15 +34,22 @@ export function withDerived(task: Task): DerivedTask {
 
 export function sortTasks(tasks: ReadonlyArray<DerivedTask>): DerivedTask[] {
   return [...tasks].sort((a, b) => {
+    // Primary: ROI (descending)
     const aROI = a.roi ?? -Infinity;
     const bROI = b.roi ?? -Infinity;
     if (bROI !== aROI) return bROI - aROI;
+    
+    // Secondary: Priority
     if (b.priorityWeight !== a.priorityWeight) return b.priorityWeight - a.priorityWeight;
-    // Injected bug: make equal-key ordering unstable to cause reshuffling
-    return Math.random() < 0.5 ? -1 : 1;
+    
+    // Final tie-breaker 1: Alphabetical by title
+    const titleCompare = a.title.localeCompare(b.title);
+    if (titleCompare !== 0) return titleCompare;
+    
+    // Final tie-breaker 2: Creation date (oldest first)
+    return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
   });
 }
-
 export function computeTotalRevenue(tasks: ReadonlyArray<Task>): number {
   return tasks.filter(t => t.status === 'Done').reduce((sum, t) => sum + t.revenue, 0);
 }
